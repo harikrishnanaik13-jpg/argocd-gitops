@@ -1,0 +1,231 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  argocd-overview.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "description": "ArgoCD monitoring dashboard",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 80}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "Total Applications",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum(argocd_app_info)",
+              "legendFormat": "Apps"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 1},
+                  {"color": "red", "value": 5}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "Apps Out of Sync",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum(argocd_app_info{sync_status!=\"Synced\"})",
+              "legendFormat": "Out of Sync"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "thresholds"},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "green", "value": null},
+                  {"color": "red", "value": 1}
+                ]
+              }
+            }
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "title": "Apps Degraded",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum(argocd_app_info{health_status=\"Degraded\"})",
+              "legendFormat": "Degraded"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2
+              }
+            }
+          },
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+          "id": 4,
+          "options": {
+            "legend": {"displayMode": "list", "placement": "bottom"}
+          },
+          "title": "Sync Activity",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "sum(rate(argocd_app_sync_total[5m])) by (phase)",
+              "legendFormat": "{{phase}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "id": 5,
+          "title": "Git Request Duration",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "histogram_quantile(0.95, sum(rate(argocd_git_request_duration_seconds_bucket[5m])) by (le, request_type))",
+              "legendFormat": "p95 {{request_type}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "lineWidth": 2
+              },
+              "unit": "s"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+          "id": 6,
+          "title": "K8s API Request Duration",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "expr": "histogram_quantile(0.95, sum(rate(argocd_app_k8s_request_total[5m])) by (le, verb, resource_kind))",
+              "legendFormat": "{{verb}} {{resource_kind}}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["argocd"],
+      "title": "ArgoCD Overview",
+      "uid": "argocd-overview",
+      "version": 1
+    }

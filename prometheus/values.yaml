@@ -1,0 +1,53 @@
+# kube-prometheus-stack helm values
+# configured to scrape argocd metrics
+
+grafana:
+  enabled: true
+  adminPassword: "changeme123"  # obviously change this in prod, would use a secret
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: argocd
+          orgId: 1
+          folder: ArgoCD
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/argocd
+  dashboardsConfigMaps:
+    argocd: argocd-dashboards
+
+prometheus:
+  prometheusSpec:
+    # this tells prometheus to pick up any ServiceMonitor in any namespace
+    # by default it only watches its own namespace which is annoying
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    # same for PodMonitors
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    # retention
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+# we dont need alertmanager for this demo but leaving it on
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi

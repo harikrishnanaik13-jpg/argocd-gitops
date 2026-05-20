@@ -1,0 +1,76 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: argocd-alerts
+  namespace: monitoring
+  labels:
+    # this label is what prometheus operator looks for
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: argocd
+      interval: 30s
+      rules:
+        - alert: ArgoCDAppOutOfSync
+          expr: |
+            argocd_app_info{sync_status!="Synced"} == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD app {{ $labels.name }} is out of sync"
+            description: |
+              Application {{ $labels.name }} in project {{ $labels.project }} 
+              has been out of sync for more than 10 minutes.
+              Current sync status: {{ $labels.sync_status }}
+
+        - alert: ArgoCDAppDegraded
+          expr: |
+            argocd_app_info{health_status="Degraded"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ArgoCD app {{ $labels.name }} is degraded"
+            description: |
+              Application {{ $labels.name }} in project {{ $labels.project }}
+              has been in Degraded health status for 5+ minutes.
+              Check the application logs and events.
+
+        - alert: ArgoCDAppSyncFailed
+          expr: |
+            sum(rate(argocd_app_sync_total{phase="Error"}[5m])) by (name, project) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD sync failed for {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} had a sync error.
+              Check the argocd UI or run: argocd app get {{ $labels.name }}
+
+        - alert: ArgoCDRepoServerUnhealthy
+          expr: |
+            up{job="argocd-repo-server-metrics"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ArgoCD repo-server is down"
+            description: |
+              The argocd-repo-server has been unreachable for 5 minutes.
+              This will stop all syncs. Check the pod status in the argocd namespace.
+
+        - alert: ArgoCDHighReconciliationLatency  
+          expr: |
+            histogram_quantile(0.95, 
+              sum(rate(argocd_app_reconcile_duration_seconds_bucket[5m])) by (le, namespace)
+            ) > 30
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD reconciliation is slow"
+            description: |
+              95th percentile reconciliation time is over 30 seconds.
+              This could indicate the cluster or git repo is under heavy load.

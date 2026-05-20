@@ -1,0 +1,7 @@
+.DS_Store
+*.swp
+*.swo
+# dont commit secrets
+*secret*
+*password*
+!prometheus/values.yaml

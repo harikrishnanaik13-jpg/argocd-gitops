@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/argocd-gitops
+    targetRevision: HEAD
+    path: argocd/install
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      # if you change Argo CD config directly in the cluster, Argo CD will restore what’s in Git
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # needed because Argo CD manages some resources using server-side apply
+      - ServerSideApply=true

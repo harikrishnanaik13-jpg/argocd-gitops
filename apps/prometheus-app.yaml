@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    # source 1: the Helm chart from prometheus-community
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 58.2.1
+      helm:
+        releaseName: kube-prometheus-stack
+        valueFiles:
+          - $values/prometheus/values.yaml
+    # source 2: this repo, so we can provide values and extra Argo CD monitoring manifests
+    # the ref: values lets the chart use this as $values
+    - repoURL: https://github.com/YOUR_USERNAME/argocd-gitops
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
