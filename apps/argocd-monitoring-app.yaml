@@ -10,20 +10,13 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_USERNAME/argocd-gitops
+    repoURL: https://github.com/harikrishnanaik/argocd-gitops
     targetRevision: HEAD
     path: prometheus
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-  # retry because ServiceMonitor CRD might not exist yet
-  # when prometheus is still coming up
+  # automated sync with retry — ServiceMonitor CRD may not exist immediately
   syncPolicy:
     automated:
       prune: true

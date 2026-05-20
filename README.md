@@ -32,12 +32,14 @@ Welcome to my Argo CD GitOps demo. This repo is built to show a real-world way t
 
 ## before you start
 
-This repo assumes you are using GitHub. Replace `YOUR_USERNAME` with your GitHub username in:
+This repo uses GitHub. I have replaced the `YOUR_USERNAME` placeholders with `harikrishnanaik` in the manifests in this tree. If you fork this repo under a different username, update the `repoURL` values in these files:
 
 - `apps/root-app.yaml`
 - `apps/argocd-app.yaml`
+- `apps/prometheus-app.yaml`
+- `apps/argocd-monitoring-app.yaml`
 
-That is the only change you need before pushing the repo and bootstrapping.
+Then push your branch and run the bootstrap script.
 
 ## quick start
 
@@ -46,32 +48,25 @@ That is the only change you need before pushing the repo and bootstrapping.
 ```bash
 git add .
 git commit -m "initial commit"
-git push
+---
+
+## end-to-end GitOps flow
+
+When an Argo CD application has automated sync enabled and you push a commit, the flow looks like this:
+
+```text
+developer pushes commit to git
+  │
+  │  (Argo CD polls git periodically, or uses webhooks)
+  ▼
+  Argo CD repo-server
+    - clones or fetches the repo
+    - checks the manifest definitions
+    - applies the desired state to the cluster
 ```
 
-2. run the bootstrap script
+From there, Argo CD reconciles resources and reports status back in the UI.
 
-```bash
-chmod +x bootstrap.sh
-./bootstrap.sh
-```
-
-That installs Argo CD into the cluster, waits for the server to be ready, and then applies `apps/root-app.yaml`. From there, Argo CD takes over and deploys everything else.
-
-## open the UIs
-
-Argo CD:
-
-```bash
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-```
-
-Then open `https://localhost:8080` and log in as:
-
-- user: `admin`
-- password: printed by `bootstrap.sh`
-
-Grafana:
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3000:80
