@@ -32,14 +32,14 @@ Welcome to my Argo CD GitOps demo. This repo is built to show a real-world way t
 
 ## before you start
 
-This repo uses GitHub. I have replaced the `YOUR_USERNAME` placeholders with `harikrishnanaik` in the manifests in this tree. If you fork this repo under a different username, update the `repoURL` values in these files:
+This repo uses GitHub. The `repoURL` values in this tree should point at your fork or repo location.
 
 - `apps/root-app.yaml`
 - `apps/argocd-app.yaml`
 - `apps/prometheus-app.yaml`
 - `apps/argocd-monitoring-app.yaml`
 
-Then push your branch and run the bootstrap script.
+Update them if you fork this repo under a different username, then push your branch and run the bootstrap script.
 
 ## quick start
 
@@ -48,25 +48,32 @@ Then push your branch and run the bootstrap script.
 ```bash
 git add .
 git commit -m "initial commit"
----
-
-## end-to-end GitOps flow
-
-When an Argo CD application has automated sync enabled and you push a commit, the flow looks like this:
-
-```text
-developer pushes commit to git
-  │
-  │  (Argo CD polls git periodically, or uses webhooks)
-  ▼
-  Argo CD repo-server
-    - clones or fetches the repo
-    - checks the manifest definitions
-    - applies the desired state to the cluster
+git push
 ```
 
-From there, Argo CD reconciles resources and reports status back in the UI.
+2. run the bootstrap script
 
+```bash
+chmod +x bootstrap.sh
+./bootstrap.sh
+```
+
+That installs Argo CD into the cluster, waits for the server to be ready, and then applies `apps/root-app.yaml`. From there, Argo CD takes over and deploys everything else.
+
+## open the UIs
+
+Argo CD:
+
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+Then open `https://localhost:8080` and log in with:
+
+- user: `admin`
+- password: printed by `bootstrap.sh`
+
+Grafana:
 
 ```bash
 kubectl port-forward svc/kube-prometheus-stack-grafana -n monitoring 3000:80
@@ -213,7 +220,7 @@ Verify the repo URL and credentials.
 
 ## end-to-end GitOps flow
 
-When an Argo CD application has automated sync enabled and you push a commit, the path looks like this:
+When an Argo CD application has automated sync enabled and you push a commit, the flow looks like this:
 
 ```text
 developer pushes commit to git
@@ -222,57 +229,21 @@ developer pushes commit to git
         ▼
   Argo CD repo-server
     - clones or fetches the repo
-    - checks the manifest definitions
-    - applies the desired state to the cluster
-```
-
-
-When an Argo CD app is set to automated sync and you push a git change:
-
-```
-developer pushes commit to git
-        │
-        │  (Argo CD polls git periodically, or uses webhooks)
-        ▼
-  Argo CD repo-server
-    - clones or fetches the repo
-```
-    - renders the manifests (helm template / kustomize build / plain yaml)
-    - returns rendered manifests to application-controller
+    - renders manifests from the configured sources
         │
         ▼
   application-controller
-    - compares rendered manifests against live cluster state
-      (it queries kube-apiserver to get current state)
-    - detects a diff (OutOfSync)
-    - since auto-sync is enabled, triggers a sync
-        │
-        ▼
-  argocd-server (the API/UI layer)
-    - handles the sync request
-    - calls repo-server again to get the final manifests
+    - compares the desired state against live cluster state
+    - marks the app OutOfSync if there are differences
+    - if automated sync is enabled, starts a sync
         │
         ▼
   kube-apiserver
-    - application-controller applies the manifests
-    - kubectl apply basically (uses server-side apply)
-    - kube-apiserver writes to etcd and schedules whatever changed
-        │
-        ▼
-  application-controller
-    - watches the resources it just applied
-    - polls health status (checks deployment rollout, pod status, etc.)
-    - updates the Application resource status
-    - once everything is healthy: marks app as Synced + Healthy
+    - applies the manifests via server-side apply
+    - updates cluster state and schedules workloads
 ```
 
-**the reconciliation loop**
-
-application-controller runs a reconciliation loop. every ~3 minutes (configurable) it:
-1. asks repo-server for the desired state from git
-2. asks kube-apiserver for the current live state
-3. compares them
-4. if different AND auto-sync is on: syncs
+From there, Argo CD reports status in the UI and keeps the app reconciled.
 
 **git polling vs webhooks**
 

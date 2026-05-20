@@ -16,7 +16,7 @@ spec:
           - $values/prometheus/values.yaml
     # source 2: this repo, so we can provide values and extra Argo CD monitoring manifests
     # the ref: values lets the chart use this as $values
-    - repoURL: https://github.com/harikrishnanaik/argocd-gitops
+    - repoURL: https://github.com/harikrishnanaik13-jpg/argocd-gitops
       targetRevision: HEAD
       ref: values
   destination:

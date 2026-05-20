@@ -5,7 +5,7 @@ set -e
 # after this, Argo CD will manage itself using the root app.
 
 ARGOCD_VERSION="v2.12.0"
-REPO_URL="https://github.com/harikrishnanaik/argocd-gitops"
+REPO_URL="https://github.com/harikrishnanaik13-jpg/argocd-gitops"
 
 echo "==> creating the argocd namespace"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
@@ -33,4 +33,4 @@ echo "done! Argo CD should now manage itself and deploy Prometheus"
 echo "open the UI with: kubectl port-forward svc/argocd-server -n argocd 8080:443"
 echo "login: admin / ${INITIAL_PASS}"
 echo ""
-echo "NOTE: I replaced the repo URL placeholders with your username."
+echo "NOTE: repo URL placeholders are updated to harikrishnanaik13-jpg."
